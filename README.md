@@ -193,7 +193,7 @@ $sampler->sampleUntil($until);
 
 # Querying Metrics
 
-### Count/Sum
+### Count & Sum
 
 Get count/sum of samples within a period. Partitions can be specified
 
@@ -229,12 +229,11 @@ Metric::get('metric-slug')->count(
 ### Get by hour/day/month etc
 
 ```php
-// Available methods:
-$metric->getByMinute($from, $until);
-$metric->getByHour($from, $until);
-$metric->getByDay($from, $until);
-$metric->getByMonth($from, $until);
-$metric->getByYear($from, $until);
+$metric->getByMinute($from, $until, $partitions);
+$metric->getByHour($from, $until, $partitions);
+$metric->getByDay($from, $until, $partitions);
+$metric->getByMonth($from, $until, $partitions);
+$metric->getByYear($from, $until, $partitions);
 ```
 
 Example:
@@ -242,7 +241,9 @@ Example:
 
 Metric::get('slug-1')->getByDay(
     Carbon::parse('2020-01-01 00:00:00'),
-    Carbon::parse('2020-01-02 10:00:00')
+    Carbon::parse('2020-01-02 10:00:00'), [
+        'color' => 'red',
+    ]
 );
 
 //  Result is a collection for every day:
