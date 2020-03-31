@@ -194,7 +194,6 @@ class SamplerTest extends TestCase
         ));
     }
 
-
     public function testSamplingFromAModel()
     {
         // Setup sampler
@@ -231,7 +230,45 @@ class SamplerTest extends TestCase
                 'color' => 'red'
             ]
         ));
-
     }
+
+    public function testGetBySegmentLevel()
+    {
+        $samplesProvider = new ExampleSamplesProvider();
+
+        $sampler = new MetricSampler($samplesProvider);
+
+        // 2 days / 48 hours
+        $sampler->samplePeriod(
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-03 00:00:00')
+        );
+
+        $hourly = Metric::get('slug-1')->getByLevel(
+            SegmentLevel::HOUR,
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-03 00:00:00')
+        );
+
+        $this->assertEquals(48, $hourly->count());
+
+        $daily = Metric::get('slug-1')->getByLevel(
+            SegmentLevel::DAY,
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-03 00:00:00')
+        );
+
+        $this->assertEquals(2, $daily->count());
+
+        // Middle of the day
+        $daily = Metric::get('slug-1')->getByLevel(
+            SegmentLevel::DAY,
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-02 10:00:00')
+        );
+
+        $this->assertEquals(1, $daily->count());
+    }
+
 
 }

@@ -8,6 +8,7 @@ use Igaster\LaravelMetrics\Services\Metrics\Helpers\Strategy;
 use Igaster\LaravelMetrics\Services\Metrics\Sample;
 use Igaster\LaravelMetrics\Services\Metrics\Segments\Segment;
 use Igaster\LaravelMetrics\Services\Metrics\Segments\SegmentLevel;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
@@ -189,6 +190,48 @@ class Metric extends Model
     public function value(Carbon $from = null, Carbon $until = null, $partitions = []): float
     {
         return $this->getForLevelCascading('value', $from, $until, $partitions);
+    }
+
+    public function getByMinute(Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        return $this->getByLevel(SegmentLevel::MINUTE, $from, $until, $partitions);
+    }
+
+    public function getByHour(Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        return $this->getByLevel(SegmentLevel::HOUR, $from, $until, $partitions);
+    }
+
+    public function getByDay(Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        return $this->getByLevel(SegmentLevel::DAY, $from, $until, $partitions);
+    }
+
+    public function getByMonth(Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        return $this->getByLevel(SegmentLevel::MONTH, $from, $until, $partitions);
+    }
+
+    public function getByYear(Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        return $this->getByLevel(SegmentLevel::YEAR, $from, $until, $partitions);
+    }
+
+    public function getByLevel(int $level, Carbon $from = null, Carbon $until = null, $partitions = []): Collection
+    {
+        $partitions = is_array($partitions) ? $partitions : [ $this->partitions[0] => $partitions];
+
+        $partitionKey = $this->getPartitionSlug($partitions);
+
+        return Metric::values()
+            ->where('from','>=', $from)
+            ->where('until','<=', $until)
+            ->where([
+                'partition_key' => $partitionKey,
+                'level' =>  $level,
+            ])->get([
+                'from', 'until', 'count', 'value'
+            ]);
     }
 
     private function getForLevelCascading(string $what, Carbon $from = null, Carbon $until = null, $partitions = []): float

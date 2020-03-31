@@ -193,6 +193,10 @@ $sampler->sampleUntil($until);
 
 # Querying Metrics
 
+### Count/Sum
+
+Get count/sum of samples within a period. Partitions can be specified
+
 ```php
 // Get count of events that occurred between two timestamps
 // and have size=small, and color=red
@@ -222,3 +226,39 @@ Metric::get('metric-slug')->count(
     Carbon::parse('2020-01-01 02:00:00')
 ));
 ``` 
+### Get by hour/day/month etc
+
+```php
+// Available methods:
+$metric->getByMinute($from, $until);
+$metric->getByHour($from, $until);
+$metric->getByDay($from, $until);
+$metric->getByMonth($from, $until);
+$metric->getByYear($from, $until);
+```
+
+Example:
+```php
+
+Metric::get('slug-1')->getByDay(
+    Carbon::parse('2020-01-01 00:00:00'),
+    Carbon::parse('2020-01-02 10:00:00')
+);
+
+//  Result is a collection for every day:
+//  [
+//      [
+//          "from" => "2020-01-01 00:00:00",
+//          "until" => "2020-01-02 00:00:00",
+//          "count" => 72,
+//          "value" => 144.0,
+//      ],
+//      [
+//          "from" => "2020-01-02 00:00:00",
+//          "until" => "2020-01-03 00:00:00",
+//          "count" => 72,
+//          "value" => 144.0,
+//      ],
+//     ...
+//  ];
+```
