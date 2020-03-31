@@ -24,33 +24,42 @@ class MetricSampler
         }
     }
 
-    private function setSamplesProvider(MetricsInterface $samplesProvider)
-    {
-        $this->samplesProvider = $samplesProvider;
-    }
-
     public function sample(Carbon $timestamp_start)
     {
-        $metrics = $this->samplesProvider->registerMetrics();
-
         /** @var Metric $metric */
-        foreach ($metrics as $metric) {
+        foreach ($this->getMetrics() as $metric) {
 
             if($timestamp_start == SegmentLevel::startsAt($metric->levels[0], $timestamp_start)) {
 
                 $this->sampleMetric($metric, $timestamp_start);
 
             }
-
         }
+    }
+
+
+    public function samplePeriod(Carbon $from, Carbon $until)
+    {
+        /** @var Metric $metric */
+        foreach ($this->getMetrics() as $metric) {
+
+            if(!$metric->last_sample || $metric->last_sample < $from) {
+
+                $metric->update([
+
+                    'last_sample' => $from
+
+                ]);
+            }
+        }
+
+        $this->sampleUntil($until);
     }
 
     public function sampleUntil(Carbon $timestamp)
     {
-        $metrics = $this->samplesProvider->registerMetrics();
-
         /** @var Metric $metric */
-        foreach ($metrics as $metric) {
+        foreach ($this->getMetrics() as $metric) {
 
             $until = SegmentLevel::startsAt($metric->levels[0], $timestamp);
 
@@ -71,6 +80,16 @@ class MetricSampler
                 }
             }
         }
+    }
+
+    private function setSamplesProvider(MetricsInterface $samplesProvider)
+    {
+        $this->samplesProvider = $samplesProvider;
+    }
+
+    private function getMetrics(): array
+    {
+        return $this->samplesProvider->registerMetrics();
     }
 
     private function sampleMetric(Metric $metric, Carbon $from)

@@ -122,8 +122,6 @@ class Metric extends Model
                 $this->saveCascading($next_level_segment);
             }
         }
-
-
     }
 
     private function saveSegment(Segment $segment)

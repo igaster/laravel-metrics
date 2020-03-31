@@ -40,7 +40,7 @@ class ExampleSamplesProvider implements MetricsInterface
     }
 ```
 
-#### Sample `registerMetrics()` implementation:
+### `registerMetrics()` example:
 
 This method configure any number of Metrics
 
@@ -60,7 +60,7 @@ public function registerMetrics(): array
 }
 ```
 
-#### Sample `sample()` implementation:
+### `sample()` example:
 
 This method will be executed at the end of the lowest sampling segment for every metric (ie every hour/day etc). It should return an array of Samples that are created from each event that occurred during this period
 
@@ -86,6 +86,8 @@ public function sample(Metric $metric, Carbon $from, Carbon $until): array
 ```
 
 # Sample an Eloquent model
+
+You may **optionally** use the `HasMetricsTrait` in your models you want to sample. This trait automates the eloquent query, and provides a convenient interface to transform your models to samples. This is an example:
 
 ```php
 use Igaster\LaravelMetrics\Models\Metric;
@@ -127,7 +129,11 @@ class ExampleSamplesModel extends Model implements MetricsInterface
     public function getSamplesQuery(Metric $metric): Builder
     {
         return self::query()
-            ->select(['quantity','color']);
+            ->where('status','=','published') // Add your business logic...
+            ->select([
+                'quantity', // It is a good practice to get only the columns that are required in makeSample()
+                'color' 
+            ]);
     }
 
     /**
@@ -143,6 +149,44 @@ class ExampleSamplesModel extends Model implements MetricsInterface
         );
     }
 }
+```
+
+# Getting the samples
+
+A) Create a sampler object and attach it to a samples provider which will be probed
+
+```php
+// Create a sampler from an object that implements MetricsInterface
+
+$samplesProvider = new ExampleSamplesProvider(); 
+
+$sampler = new MetricSampler($samplesProvider);
+
+// Create a sampler a Model that implements MetricsInterface (It doesn't have to be an object instance)
+
+$sampler = new MetricSampler(SomeModel::class);
+```
+
+B) Get and process samples for some time-slots. These requirements must be met:
+
+- A time-slot must be completed in order to get valid results (ie you can get samples from last hour, but not from current hour)
+- Time is linear: Time-slots must be processed in sequential order. Samples within a time-slot can be fetched in any order because they are processed as a batch.
+
+
+```php
+// Sample a single timeslot that starts at a timestamp.
+// If a metric doesn't have a time-slot that starts at current timestamp, it will be skipped.
+$sampler->sample($timestamp);
+
+// Sample for a period of time
+$sampler->samplePeriod($from, $until);
+
+// Continue sampling since last sample was taken, and stop at some timestamp.
+// If this is the 1st time that a metric is processed then current timestamp is initialized as starting time
+// Only metrics that have a whole time-slot completed since last execution will be executed.
+// $until doesn't have to match with the end of a time-slot. The end of the latest time-slot for each metric will be calculated and used. 
+// You should design your system to call this method in intervals
+$sampler->sampleUntil($until);
 ```
 
 # Querying Metrics
@@ -176,4 +220,3 @@ Metric::get('metric-slug')->count(
     Carbon::parse('2020-01-01 02:00:00')
 ));
 ``` 
-

@@ -173,13 +173,31 @@ class SamplerTest extends TestCase
         ));
     }
 
+    public function testSamplePeriod()
+    {
+        $samplesProvider = new ExampleSamplesProvider();
+
+        $sampler = new MetricSampler($samplesProvider);
+
+        $sampler->samplePeriod(Carbon::parse('2020-01-01 00:00:00'), Carbon::parse('2020-01-02 00:00:00'));
+
+        // hours
+        $this->assertEquals(3 * 24,  Metric::get('slug-1')->count(
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-02 00:00:00')
+        ));
+
+        // days
+        $this->assertEquals(1,  Metric::get('slug-2')->count(
+            Carbon::parse('2020-01-01 00:00:00'),
+            Carbon::parse('2020-01-02 00:00:00')
+        ));
+    }
+
+
     public function testSamplingFromAModel()
     {
         // Setup sampler
-
-        $samplesModel = new ExampleSamplesModel();
-
-        // $sampler = new MetricSampler($samplesModel);
 
         $sampler = new MetricSampler(ExampleSamplesModel::class);
 
