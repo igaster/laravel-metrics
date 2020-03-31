@@ -1,8 +1,8 @@
 [![Laravel](https://img.shields.io/badge/Laravel-orange.svg)](http://laravel.com)
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg)](https://tldrlegal.com/license/mit-license)
-[![Downloads](https://img.shields.io/packagist/dt/igaster/GITHUB_ADDRESS.svg)](https://packagist.org/packages/igaster/GITHUB_ADDRESS)
-[![Build Status](https://img.shields.io/travis/igaster/GITHUB_ADDRESS.svg)](https://travis-ci.org/igaster/GITHUB_ADDRESS)
-[![Codecov](https://img.shields.io/codecov/c/github/igaster/GITHUB_ADDRESS.svg)](https://codecov.io/github/igaster/GITHUB_ADDRESS)
+[![Downloads](https://img.shields.io/packagist/dt/igaster/laravel-metrics.svg)](https://packagist.org/packages/igaster/laravel-metrics)
+[![Build Status](https://img.shields.io/travis/igaster/laravel-metrics.svg)](https://travis-ci.org/igaster/laravel-metrics)
+[![Codecov](https://img.shields.io/codecov/c/github/igaster/laravel-metrics.svg)](https://codecov.io/github/igaster/laravel-metrics)
 
 # Introduction
 
@@ -153,25 +153,27 @@ class ExampleSamplesModel extends Model implements MetricsInterface
 
 # Getting the samples
 
-A) Create a sampler object and attach it to a samples provider which will be probed
+### 1) Create a "Sampler" object:
+ 
+ - Each sampler is attached to a "Samples Provider" which will be probed
+ - You can create the Sampler either from an object, or from a Model classname:
 
 ```php
-// Create a sampler from an object that implements MetricsInterface
+// a) Create a sampler from an object that implements MetricsInterface
 
 $samplesProvider = new ExampleSamplesProvider(); 
 
 $sampler = new MetricSampler($samplesProvider);
 
-// Create a sampler a Model that implements MetricsInterface (It doesn't have to be an object instance)
+// b) Create a sampler a Model that implements MetricsInterface (It doesn't have to be an object instance)
 
 $sampler = new MetricSampler(SomeModel::class);
 ```
 
-B) Get and process samples for some time-slots. These requirements must be met:
+### 2) Get and process samples for some time-slots. These requirements must be met:
 
 - A time-slot must be completed in order to get valid results (ie you can get samples from last hour, but not from current hour)
 - Time is linear: Time-slots must be processed in sequential order. Samples within a time-slot can be fetched in any order because they are processed as a batch.
-
 
 ```php
 // Sample a single timeslot that starts at a timestamp.
