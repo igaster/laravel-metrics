@@ -40,7 +40,9 @@ class ExampleSamplesProvider implements MetricsInterface
     }
 ```
 
-### `registerMetrics()` example:
+Examples:
+
+### `registerMetrics()`:
 
 This method configure any number of Metrics
 
@@ -60,7 +62,7 @@ public function registerMetrics(): array
 }
 ```
 
-### `sample()` example:
+### `sample()`:
 
 This method will be executed at the end of the lowest sampling segment for every metric (ie every hour/day etc). It should return an array of Samples that are created from each event that occurred during this period
 
@@ -85,9 +87,13 @@ public function sample(Metric $metric, Carbon $from, Carbon $until): array
 }
 ```
 
-# Sample an Eloquent model
+# Sample from an Eloquent model
 
-You may **optionally** use the `HasMetricsTrait` in your models you want to sample. This trait automates the eloquent query, and provides a convenient interface to transform your models to samples. This is an example:
+You may use the `HasMetricsTrait` in your models that you want to sample. This trait automates the eloquent query, and provides a convenient interface to transform your models to samples. 
+
+Note: This step is **optional**. You can just implement the `MetricsInterface` in your model, as it is described in the previous section.
+
+This is an example:
 
 ```php
 use Igaster\LaravelMetrics\Models\Metric;
@@ -153,25 +159,28 @@ class ExampleSamplesModel extends Model implements MetricsInterface
 
 # Getting the samples
 
+Sampling is a two step process:
+
 ### 1) Create a "Sampler" object:
  
- - Each sampler is attached to a "Samples Provider" which will be probed
- - You can create the Sampler either from an object, or from a Model classname:
+ - Each sampler is attached to a "Samples Provider" which will be probed in regular intervals
+ - You can create the Sampler either a) from an object instance , or b) from a Model classname:
 
 ```php
-// a) Create a sampler from an object that implements MetricsInterface
+// a) Create a sampler from an object instance:
 
-$samplesProvider = new ExampleSamplesProvider(); 
+$samplesProvider = new ExampleSamplesProvider(); // ExampleSamplesProvider implements MetricsInterface.
 
 $sampler = new MetricSampler($samplesProvider);
 
-// b) Create a sampler a Model that implements MetricsInterface (It doesn't have to be an object instance)
+// b) Create a sampler from a Model:
 
-$sampler = new MetricSampler(SomeModel::class);
+$sampler = new MetricSampler(SomeModel::class); // SomeModel implements MetricsInterface.
 ```
 
-### 2) Get and process samples for some time-slots. These requirements must be met:
+### 2) Get & Process samples for some time-slots. 
 
+These requirements must be met:
 - A time-slot must be completed in order to get valid results (ie you can get samples from last hour, but not from current hour)
 - Time is linear: Time-slots must be processed in sequential order. Samples within a time-slot can be fetched in any order because they are processed as a batch.
 
@@ -187,7 +196,7 @@ $sampler->samplePeriod($from, $until);
 // If this is the 1st time that a metric is processed then current timestamp is initialized as starting time
 // Only metrics that have a whole time-slot completed since last execution will be executed.
 // $until doesn't have to match with the end of a time-slot. The end of the latest time-slot for each metric will be calculated and used. 
-// You should design your system to call this method in intervals
+// You should design your system to call this method in regular intervals
 $sampler->sampleUntil($until);
 ```
 
@@ -195,7 +204,7 @@ $sampler->sampleUntil($until);
 
 ### Count & Sum
 
-Get count/sum of samples within a period. Partitions can be specified
+Get count/sum of samples within a period. Partitions can optionally be specified
 
 ```php
 // Get count of events that occurred between two timestamps
@@ -220,7 +229,7 @@ Metric::get('metric-slug')->value(
 ));
 
 // Get count of events that occurred between two timestamps
-// Any partition
+// and belong to any partition
 Metric::get('metric-slug')->count(
     Carbon::parse('2020-01-01 00:00:00'),
     Carbon::parse('2020-01-01 02:00:00')
@@ -228,7 +237,11 @@ Metric::get('metric-slug')->count(
 ``` 
 ### Get by hour/day/month etc
 
+The following methods are available in the Metric class:
+
 ```php
+$metric = Metric::get('metric-slug');
+
 $metric->getByMinute($from, $until, $partitions);
 $metric->getByHour($from, $until, $partitions);
 $metric->getByDay($from, $until, $partitions);
@@ -239,7 +252,7 @@ $metric->getByYear($from, $until, $partitions);
 Example:
 ```php
 
-Metric::get('slug-1')->getByDay(
+Metric::get('metric-slug')->getByDay(
     Carbon::parse('2020-01-01 00:00:00'),
     Carbon::parse('2020-01-02 10:00:00'), [
         'color' => 'red',
